@@ -148,10 +148,7 @@ def _validate_address(reg):
                 except ValueError:
                     raise ValueError('Value for key "address" has to be an integer.')
         except:
-            try:
-                reg['address'] = hex(int(reg['address']))
-            except ValueError:
-                raise ValueError('Value for key "address" has to be an integer.')
+            reg['address'] = hex(int(reg['address']))
 
 
 def _validate_section_size(reg):
