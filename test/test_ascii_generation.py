@@ -168,7 +168,7 @@ class NameErrorCases(TestCase):
 
 
 class WidthErrorCases(TestCase):
-    def test__no_width__raises_key_error(self):
+    def test__no_width__set_to_default_8(self):
         reg = {
             'name': 'REGA',
             'address': '0x123',
@@ -179,8 +179,15 @@ class WidthErrorCases(TestCase):
                 }
             }
         }
-        with self.assertRaises(KeyError):
-            generate(reg)
+        expected = '''\
+/*------------------------------#
+| REGA                    0x123 |
+#-------------------------------#
+| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+#------------------------------*/
+'''
+        result = generate(reg)
+        self.assertEquals(expected, result)
 
     def test__string_width_gets_converted(self):
         reg = {

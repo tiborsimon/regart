@@ -127,7 +127,7 @@ def _validate_name(reg):
 
 def _validate_width(reg):
     if 'width' not in reg:
-        raise KeyError('Missing mandatory key: "width"')
+        reg['width'] = 8
     try:
         reg['width'] = int(reg['width'])
     except ValueError:
