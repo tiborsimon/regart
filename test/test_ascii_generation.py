@@ -150,21 +150,35 @@ class OnlySectionsTitleIsTheRegisterName(TestCase):
         result = generate(reg)
         self.assertEquals(expected, result)
 
+class MinimalConfig(TestCase):
+    def test__no_name__set_default_to_REG(self):
+        reg = {}
+        expected = '''\
+/*------------------------------#
+| REG                           |
+#-------------------------------#
+| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+#------------------------------*/
+'''
+        result = generate(reg)
+        self.assertEquals(expected, result)
+
 
 class NameErrorCases(TestCase):
-    def test__no_name__raises_key_error(self):
+    def test__no_name__set_default_to_REG(self):
         reg = {
             'width': 8,
-            'address': '0x123',
-            'sections': {
-                'REGA': {
-                    'position': 0,
-                    'size': 8
-                }
-            }
+            'address': '0x123'
         }
-        with self.assertRaises(KeyError):
-            generate(reg)
+        expected = '''\
+/*------------------------------#
+| REG                     0x123 |
+#-------------------------------#
+| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+#------------------------------*/
+'''
+        result = generate(reg)
+        self.assertEquals(expected, result)
 
 
 class WidthErrorCases(TestCase):

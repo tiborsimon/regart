@@ -69,13 +69,7 @@ def generate(reg):
 
 
 def _transform_sections(reg):
-    if 'sections' not in reg:
-        reg['sections'] = [{
-            'name': reg['name'],
-            'position': 0,
-            'size': reg['width']
-        }]
-    else:
+    if 'sections' in reg:
         temp = []
         for section_name in reg['sections']:
             section = reg['sections'][section_name]
@@ -116,13 +110,23 @@ def _error_handling(reg):
     _validate_name(reg)
     _validate_width(reg)
     _validate_address(reg)
+    _validate_sections(reg)
     _validate_section_size(reg)
     _validate_section_position(reg)
 
 
+def _validate_sections(reg):
+    if 'sections' not in reg:
+        reg['sections'] = [{
+            'name': reg['name'],
+            'position': 0,
+            'size': reg['width']
+        }]
+
+
 def _validate_name(reg):
     if 'name' not in reg:
-        raise KeyError('Missing mandatory key: "name"')
+        reg['name'] = 'REG'
 
 
 def _validate_width(reg):
