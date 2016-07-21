@@ -1,8 +1,9 @@
 from unittest import TestCase
 
-from regart import generate_register_art
-from regart import transform_sections
-from regart import default_width_for_size
+from regart import generate
+from regart import _transform_sections
+from regart import _default_width_for_size
+
 
 class GetWidthForSize(TestCase):
 
@@ -10,28 +11,28 @@ class GetWidthForSize(TestCase):
         temp = '10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0'
         size = 11
         expected = len(temp)
-        result = default_width_for_size(size)
+        result = _default_width_for_size(size)
         self.assertEqual(expected, result)
 
     def test__basic_8_bit_length(self):
         temp = '7 | 6 | 5 | 4 | 3 | 2 | 1 | 0'
         size = 8
         expected = len(temp)
-        result = default_width_for_size(size)
+        result = _default_width_for_size(size)
         self.assertEqual(expected, result)
 
     def test__basic_2_bit_length(self):
         temp = '7 | 6'
         size = 2
         expected = len(temp)
-        result = default_width_for_size(size)
+        result = _default_width_for_size(size)
         self.assertEqual(expected, result)
 
     def test__basic_1_bit_length(self):
         temp = '7'
         size = 1
         expected = len(temp)
-        result = default_width_for_size(size)
+        result = _default_width_for_size(size)
         self.assertEqual(expected, result)
 
 
@@ -78,7 +79,7 @@ class SectionTransformation(TestCase):
                 }
             ]
         }
-        transform_sections(reg)
+        _transform_sections(reg)
         self.assertEqual(expected, reg)
 
 
@@ -102,7 +103,7 @@ class OnlySectionsTitleIsTheRegisterName(TestCase):
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 #------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__full_width_section__long_name_edge_case(self):
@@ -124,7 +125,7 @@ class OnlySectionsTitleIsTheRegisterName(TestCase):
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 #------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__full_width_section__long_name(self):
@@ -146,7 +147,7 @@ class OnlySectionsTitleIsTheRegisterName(TestCase):
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0        |
 #-------------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
 
@@ -163,7 +164,7 @@ class NameErrorCases(TestCase):
             }
         }
         with self.assertRaises(KeyError):
-            generate_register_art(reg)
+            generate(reg)
 
 
 class WidthErrorCases(TestCase):
@@ -179,7 +180,7 @@ class WidthErrorCases(TestCase):
             }
         }
         with self.assertRaises(KeyError):
-            generate_register_art(reg)
+            generate(reg)
 
     def test__string_width_gets_converted(self):
         reg = {
@@ -200,7 +201,7 @@ class WidthErrorCases(TestCase):
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 #------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__width_not_integer__raises_valueerror(self):
@@ -216,7 +217,7 @@ class WidthErrorCases(TestCase):
             }
         }
         with self.assertRaises(ValueError):
-            generate_register_art(reg)
+            generate(reg)
 
 
 class AddressErrorCases(TestCase):
@@ -238,7 +239,7 @@ class AddressErrorCases(TestCase):
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 #------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__address_no_0x_prefix__gets_extended(self):
@@ -260,7 +261,7 @@ class AddressErrorCases(TestCase):
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0      |
 #-----------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__address_no_0x_prefix_and_not_integer__valueerror_raised(self):
@@ -276,7 +277,7 @@ class AddressErrorCases(TestCase):
             }
         }
         with self.assertRaises(ValueError):
-            generate_register_art(reg)
+            generate(reg)
 
     def test__address_integer_gets_converted_to_hexa(self):
         reg = {
@@ -297,7 +298,29 @@ class AddressErrorCases(TestCase):
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0      |
 #-----------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
+        self.assertEquals(expected, result)
+
+    def test__address_not_string_integer_gets_converted_to_hexa(self):
+        reg = {
+            'width': 8,
+            'name': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            'address': 15,
+            'sections': {
+                'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA': {
+                    'position': 0,
+                    'size': 8
+                }
+            }
+        }
+        expected = '''\
+/*-----------------------------------#
+| AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0xf |
+#------------------------------------#
+| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0      |
+#-----------------------------------*/
+'''
+        result = generate(reg)
         self.assertEquals(expected, result)
 
 
@@ -323,7 +346,7 @@ class SectionsTitleIsDifferentFromTheRegisterName(TestCase):
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 #------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__two_sections(self):
@@ -351,7 +374,7 @@ class SectionsTitleIsDifferentFromTheRegisterName(TestCase):
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 #------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__two_sections__first_one_longer_than_the_position_place(self):
@@ -379,7 +402,7 @@ class SectionsTitleIsDifferentFromTheRegisterName(TestCase):
 | 7  | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 #-------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__full_section_with_one_lenghts(self):
@@ -431,7 +454,7 @@ class SectionsTitleIsDifferentFromTheRegisterName(TestCase):
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 #------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__full_section_with_one_lenghts_with_longer_names(self):
@@ -483,7 +506,7 @@ class SectionsTitleIsDifferentFromTheRegisterName(TestCase):
 | 7   | 6   | 5   | 4   | 3   | 2   | 1   | 0   |
 #----------------------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__full_sections_with_long_reg_name(self):
@@ -535,7 +558,7 @@ class SectionsTitleIsDifferentFromTheRegisterName(TestCase):
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0                  |
 #-----------------------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__full_sections_with_long_reg_name_and_even_longer_last_section(self):
@@ -587,7 +610,7 @@ class SectionsTitleIsDifferentFromTheRegisterName(TestCase):
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0   |
 #--------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__full_sections_with_long_reg_name_and_even_longer_an_other_section(self):
@@ -639,7 +662,7 @@ class SectionsTitleIsDifferentFromTheRegisterName(TestCase):
 | 7 | 6 | 5 | 4 | 3 | 2 | 1     | 0  |
 #-----------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
 
@@ -665,7 +688,7 @@ class MoreThan8BitTests(TestCase):
 | 31 | 30 | 29 | 28 | 27 | 26 | 25 | 24 | 23 | 22 | 21 | 20 | 19 | 18 | 17 | 16 | 15 | 14 | 13 | 12 | 11 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
 #----------------------------------------------------------------------------------------------------------------------------------------------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__4_bit_width(self):
@@ -689,7 +712,7 @@ class MoreThan8BitTests(TestCase):
 | 3 | 2 | 1 | 0 |
 #--------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
 
@@ -707,7 +730,7 @@ class SectionErrorHandling(TestCase):
 | 3 | 2 | 1 | 0 |
 #--------------*/
 '''
-        result = generate_register_art(reg)
+        result = generate(reg)
         self.assertEquals(expected, result)
 
     def test__sections_not_filling_the_width(self):
@@ -723,7 +746,7 @@ class SectionErrorHandling(TestCase):
             }
         }
         with self.assertRaises(ValueError):
-            generate_register_art(reg)
+            generate(reg)
 
     def test__sections_exceeding_the_width(self):
         reg = {
@@ -738,7 +761,7 @@ class SectionErrorHandling(TestCase):
             }
         }
         with self.assertRaises(ValueError):
-            generate_register_art(reg)
+            generate(reg)
 
     def test__position_defined_twice(self):
         reg = {
@@ -757,7 +780,7 @@ class SectionErrorHandling(TestCase):
             }
         }
         with self.assertRaises(ValueError):
-            generate_register_art(reg)
+            generate(reg)
 
     def test__section_intersection(self):
         reg = {
@@ -776,4 +799,45 @@ class SectionErrorHandling(TestCase):
             }
         }
         with self.assertRaises(ValueError):
-            generate_register_art(reg)
+            generate(reg)
+
+    def test__string_section_values_gets_converted(self):
+        reg = {
+            'width': 4,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'AA': {
+                    'position': '0',
+                    'size': '4'
+                }
+            }
+        }
+        expected = '''\
+/*--------------#
+| REGA    0x123 |
+#---------------#
+| AA            |
+#---------------#
+| 3 | 2 | 1 | 0 |
+#--------------*/
+'''
+        result = generate(reg)
+        self.assertEquals(expected, result)
+
+    def test__string_non_integer_section_values_gets_converted__error(self):
+        reg = {
+            'width': 4,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'AA': {
+                    'position': 'lkj',
+                    'size': '4'
+                }
+            }
+        }
+        with self.assertRaises(ValueError):
+            generate(reg)
+
+
