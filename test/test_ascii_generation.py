@@ -241,88 +241,539 @@ class AddressErrorCases(TestCase):
         result = generate_register_art(reg)
         self.assertEquals(expected, result)
 
-    # def test__address_no_0x_prefix__gets_extended(self):
-    #     reg = {
-    #         'width': 8,
-    #         'name': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-    #         'address': '4',
-    #         'sections': {
-    #             'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA': {
-    #                 'position': 0,
-    #                 'size': 8
-    #             }
-    #         }
-    #     }
-    #     expected = '''\
-# /*-----------------------------------#
-# | AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0x4 |
-# #------------------------------------#
-# | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0      |
-# #-----------------------------------*/
-# '''
-    #     result = generate_register_art(reg)
-    #     self.assertEquals(expected, result)
+    def test__address_no_0x_prefix__gets_extended(self):
+        reg = {
+            'width': 8,
+            'name': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            'address': '4',
+            'sections': {
+                'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA': {
+                    'position': 0,
+                    'size': 8
+                }
+            }
+        }
+        expected = '''\
+/*-----------------------------------#
+| AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0x4 |
+#------------------------------------#
+| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0      |
+#-----------------------------------*/
+'''
+        result = generate_register_art(reg)
+        self.assertEquals(expected, result)
 
-    # def test__address_no_0x_prefix_and_not_integer__valueerror_raised(self):
-    #     reg = {
-    #         'width': 8,
-    #         'name': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-    #         'address': 'lkj',
-    #         'sections': {
-    #             'REGA': {
-    #                 'position': 0,
-    #                 'size': 8
-    #             }
-    #         }
-    #     }
-    #     with self.assertRaises(ValueError):
-    #         generate_register_art(reg)
+    def test__address_no_0x_prefix_and_not_integer__valueerror_raised(self):
+        reg = {
+            'width': 8,
+            'name': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            'address': 'lkj',
+            'sections': {
+                'REGA': {
+                    'position': 0,
+                    'size': 8
+                }
+            }
+        }
+        with self.assertRaises(ValueError):
+            generate_register_art(reg)
 
-    # def test__address_integer_gets_converted_to_hexa(self):
-    #     reg = {
-    #         'width': 8,
-    #         'name': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-    #         'address': '15',
-    #         'sections': {
-    #             'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA': {
-    #                 'position': 0,
-    #                 'size': 8
-    #             }
-    #         }
-    #     }
-    #     expected = '''\
-# /*-----------------------------------#
-# | AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0xf |
-# #------------------------------------#
-# | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0      |
-# #-----------------------------------*/
-# '''
-    #     result = generate_register_art(reg)
-    #     self.assertEquals(expected, result)
+    def test__address_integer_gets_converted_to_hexa(self):
+        reg = {
+            'width': 8,
+            'name': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            'address': '15',
+            'sections': {
+                'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA': {
+                    'position': 0,
+                    'size': 8
+                }
+            }
+        }
+        expected = '''\
+/*-----------------------------------#
+| AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0xf |
+#------------------------------------#
+| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0      |
+#-----------------------------------*/
+'''
+        result = generate_register_art(reg)
+        self.assertEquals(expected, result)
 
 
-# # class OnlySectionsTitleIsDifferentFromTheRegisterName(TestCase):
-# #     def test__full_width_section_can_be_rendered(self):
-# #         reg = {
-# #             'width': 8,
-# #             'name': 'REGA',
-# #             'address': '0x123',
-# #             'sections': {
-# #                 'SECTIONaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa': {
-# #                     'position': 0,
-# #                     'size': 8
-# #                 }
-# #             }
-# #         }
-# #         expected = '''\
-# # /*------------------------------#
-# # | REGA                    0x123 |
-# # #-------------------------------#
-# # | SECTION                       |
-# # #-------------------------------#
-# # | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
-# # #------------------------------*/
-# # '''
-# #         result = generate_register_art(reg)
-# #         print(result)
-# #         self.assertEquals(expected, result)
+class SectionsTitleIsDifferentFromTheRegisterName(TestCase):
+    def test__full_width_section_can_be_rendered(self):
+        reg = {
+            'width': 8,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'SECTION': {
+                    'position': 0,
+                    'size': 8
+                }
+            }
+        }
+        expected = '''\
+/*------------------------------#
+| REGA                    0x123 |
+#-------------------------------#
+| SECTION                       |
+#-------------------------------#
+| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+#------------------------------*/
+'''
+        result = generate_register_art(reg)
+        self.assertEquals(expected, result)
+
+    def test__two_sections(self):
+        reg = {
+            'width': 8,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'A': {
+                    'position': 7,
+                    'size': 1
+                },
+                'B': {
+                    'position': 0,
+                    'size': 7
+                }
+            }
+        }
+        expected = '''\
+/*------------------------------#
+| REGA                    0x123 |
+#-------------------------------#
+| A | B                         |
+#-------------------------------#
+| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+#------------------------------*/
+'''
+        result = generate_register_art(reg)
+        self.assertEquals(expected, result)
+
+    def test__two_sections__first_one_longer_than_the_position_place(self):
+        reg = {
+            'width': 8,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'AA': {
+                    'position': 7,
+                    'size': 1
+                },
+                'B': {
+                    'position': 0,
+                    'size': 7
+                }
+            }
+        }
+        expected = '''\
+/*-------------------------------#
+| REGA                     0x123 |
+#--------------------------------#
+| AA | B                         |
+#--------------------------------#
+| 7  | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+#-------------------------------*/
+'''
+        result = generate_register_art(reg)
+        self.assertEquals(expected, result)
+
+    def test__full_section_with_one_lenghts(self):
+        reg = {
+            'width': 8,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'A': {
+                    'position': 7,
+                    'size': 1
+                },
+                'B': {
+                    'position': 6,
+                    'size': 1
+                },
+                'C': {
+                    'position': 5,
+                    'size': 1
+                },
+                'D': {
+                    'position': 4,
+                    'size': 1
+                },
+                'E': {
+                    'position': 3,
+                    'size': 1
+                },
+                'F': {
+                    'position': 2,
+                    'size': 1
+                },
+                'G': {
+                    'position': 1,
+                    'size': 1
+                },
+                'H': {
+                    'position': 0,
+                    'size': 1
+                }
+            }
+        }
+        expected = '''\
+/*------------------------------#
+| REGA                    0x123 |
+#-------------------------------#
+| A | B | C | D | E | F | G | H |
+#-------------------------------#
+| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+#------------------------------*/
+'''
+        result = generate_register_art(reg)
+        self.assertEquals(expected, result)
+
+    def test__full_section_with_one_lenghts_with_longer_names(self):
+        reg = {
+            'width': 8,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'AAA': {
+                    'position': 7,
+                    'size': 1
+                },
+                'BBB': {
+                    'position': 6,
+                    'size': 1
+                },
+                'CCC': {
+                    'position': 5,
+                    'size': 1
+                },
+                'DDD': {
+                    'position': 4,
+                    'size': 1
+                },
+                'EEE': {
+                    'position': 3,
+                    'size': 1
+                },
+                'FFF': {
+                    'position': 2,
+                    'size': 1
+                },
+                'GGG': {
+                    'position': 1,
+                    'size': 1
+                },
+                'HHH': {
+                    'position': 0,
+                    'size': 1
+                }
+            }
+        }
+        expected = '''\
+/*----------------------------------------------#
+| REGA                                    0x123 |
+#-----------------------------------------------#
+| AAA | BBB | CCC | DDD | EEE | FFF | GGG | HHH |
+#-----------------------------------------------#
+| 7   | 6   | 5   | 4   | 3   | 2   | 1   | 0   |
+#----------------------------------------------*/
+'''
+        result = generate_register_art(reg)
+        self.assertEquals(expected, result)
+
+    def test__full_sections_with_long_reg_name(self):
+        reg = {
+            'width': 8,
+            'name': 'REGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            'address': '0x123',
+            'sections': {
+                'A': {
+                    'position': 7,
+                    'size': 1
+                },
+                'B': {
+                    'position': 6,
+                    'size': 1
+                },
+                'C': {
+                    'position': 5,
+                    'size': 1
+                },
+                'D': {
+                    'position': 4,
+                    'size': 1
+                },
+                'E': {
+                    'position': 3,
+                    'size': 1
+                },
+                'F': {
+                    'position': 2,
+                    'size': 1
+                },
+                'G': {
+                    'position': 1,
+                    'size': 1
+                },
+                'H': {
+                    'position': 0,
+                    'size': 1
+                }
+            }
+        }
+        expected = '''\
+/*-----------------------------------------------#
+| REGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0x123 |
+#------------------------------------------------#
+| A | B | C | D | E | F | G | H                  |
+#------------------------------------------------#
+| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0                  |
+#-----------------------------------------------*/
+'''
+        result = generate_register_art(reg)
+        self.assertEquals(expected, result)
+
+    def test__full_sections_with_long_reg_name_and_even_longer_last_section(self):
+        reg = {
+            'width': 8,
+            'name': 'REGAAAAAAAAAAAAAAAAAAAAA',
+            'address': '0x123',
+            'sections': {
+                'A': {
+                    'position': 7,
+                    'size': 1
+                },
+                'B': {
+                    'position': 6,
+                    'size': 1
+                },
+                'C': {
+                    'position': 5,
+                    'size': 1
+                },
+                'D': {
+                    'position': 4,
+                    'size': 1
+                },
+                'E': {
+                    'position': 3,
+                    'size': 1
+                },
+                'F': {
+                    'position': 2,
+                    'size': 1
+                },
+                'G': {
+                    'position': 1,
+                    'size': 1
+                },
+                'HH': {
+                    'position': 0,
+                    'size': 1
+                }
+            }
+        }
+        expected = '''\
+/*--------------------------------#
+| REGAAAAAAAAAAAAAAAAAAAAA  0x123 |
+#---------------------------------#
+| A | B | C | D | E | F | G | HH  |
+#---------------------------------#
+| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0   |
+#--------------------------------*/
+'''
+        result = generate_register_art(reg)
+        self.assertEquals(expected, result)
+
+    def test__full_sections_with_long_reg_name_and_even_longer_an_other_section(self):
+        reg = {
+            'width': 8,
+            'name': 'REGAAAAAAAAAAAAAAAAAAAAA',
+            'address': '0x123',
+            'sections': {
+                'A': {
+                    'position': 7,
+                    'size': 1
+                },
+                'B': {
+                    'position': 6,
+                    'size': 1
+                },
+                'C': {
+                    'position': 5,
+                    'size': 1
+                },
+                'D': {
+                    'position': 4,
+                    'size': 1
+                },
+                'E': {
+                    'position': 3,
+                    'size': 1
+                },
+                'F': {
+                    'position': 2,
+                    'size': 1
+                },
+                'GGGGG': {
+                    'position': 1,
+                    'size': 1
+                },
+                'H': {
+                    'position': 0,
+                    'size': 1
+                }
+            }
+        }
+        expected = '''\
+/*-----------------------------------#
+| REGAAAAAAAAAAAAAAAAAAAAA     0x123 |
+#------------------------------------#
+| A | B | C | D | E | F | GGGGG | H  |
+#------------------------------------#
+| 7 | 6 | 5 | 4 | 3 | 2 | 1     | 0  |
+#-----------------------------------*/
+'''
+        result = generate_register_art(reg)
+        self.assertEquals(expected, result)
+
+
+class MoreThan8BitTests(TestCase):
+    def test__32_bit_width(self):
+        reg = {
+            'width': 32,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'AA': {
+                    'position': 0,
+                    'size': 32
+                }
+            }
+        }
+        expected = '''\
+/*----------------------------------------------------------------------------------------------------------------------------------------------------#
+| REGA                                                                                                                                          0x123 |
+#-----------------------------------------------------------------------------------------------------------------------------------------------------#
+| AA                                                                                                                                                  |
+#-----------------------------------------------------------------------------------------------------------------------------------------------------#
+| 31 | 30 | 29 | 28 | 27 | 26 | 25 | 24 | 23 | 22 | 21 | 20 | 19 | 18 | 17 | 16 | 15 | 14 | 13 | 12 | 11 | 10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+#----------------------------------------------------------------------------------------------------------------------------------------------------*/
+'''
+        result = generate_register_art(reg)
+        self.assertEquals(expected, result)
+
+    def test__4_bit_width(self):
+        reg = {
+            'width': 4,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'AA': {
+                    'position': 0,
+                    'size': 4
+                }
+            }
+        }
+        expected = '''\
+/*--------------#
+| REGA    0x123 |
+#---------------#
+| AA            |
+#---------------#
+| 3 | 2 | 1 | 0 |
+#--------------*/
+'''
+        result = generate_register_art(reg)
+        self.assertEquals(expected, result)
+
+
+class SectionErrorHandling(TestCase):
+    def test__no_sections__sections_inserted(self):
+        reg = {
+            'width': 4,
+            'name': 'REGA',
+            'address': '0x123'
+        }
+        expected = '''\
+/*--------------#
+| REGA    0x123 |
+#---------------#
+| 3 | 2 | 1 | 0 |
+#--------------*/
+'''
+        result = generate_register_art(reg)
+        self.assertEquals(expected, result)
+
+    def test__sections_not_filling_the_width(self):
+        reg = {
+            'width': 4,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'AA': {
+                    'position': 0,
+                    'size': 3
+                }
+            }
+        }
+        with self.assertRaises(ValueError):
+            generate_register_art(reg)
+
+    def test__sections_exceeding_the_width(self):
+        reg = {
+            'width': 4,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'AA': {
+                    'position': 0,
+                    'size': 5
+                }
+            }
+        }
+        with self.assertRaises(ValueError):
+            generate_register_art(reg)
+
+    def test__position_defined_twice(self):
+        reg = {
+            'width': 4,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'B': {
+                    'position': 0,
+                    'size': 2
+                },
+                'A': {
+                    'position': 0,
+                    'size': 2
+                }
+            }
+        }
+        with self.assertRaises(ValueError):
+            generate_register_art(reg)
+
+    def test__section_intersection(self):
+        reg = {
+            'width': 4,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'B': {
+                    'position': 0,
+                    'size': 3
+                },
+                'A': {
+                    'position': 2,
+                    'size': 1
+                }
+            }
+        }
+        with self.assertRaises(ValueError):
+            generate_register_art(reg)
