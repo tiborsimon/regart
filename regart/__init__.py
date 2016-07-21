@@ -1,11 +1,11 @@
 
-HEADER = '/*{line}#'
+HEADER = '/*{line}-#'
 HEADER_FACTOR = 3
 TITLE = '| {name}{space}{address} |'
-TITLE_FACTOR = 4
-DIVIDER = '#{line}#'
+TITLE_FACTOR = 2
+DIVIDER = '#-{line}-#'
 DIVIDER_FACTOR = 2
-FOOTER = '#{line}*/'
+FOOTER = '#-{line}*/'
 FOOTER_FACTOR = 3
 
 
@@ -39,62 +39,44 @@ def transform_sections(reg):
 
 def generate_register_art(reg):
     error_handling(reg)
-
     transform_sections(reg)
 
-    ready = False
-    expandeable_section = None
+    expands = {}
 
-    while not ready:
-        ready = True
-        bits = ''
-        bits = _generate_bits(bits, expandeable_section, reg)
+    width = default_width_for_size(reg['width'])
 
-        expandeable_section = None
+    if 'address' not in reg:
+        reg['address'] = ''
+    title_min_width = len(reg['name']) + len(reg['address']) + 1
 
-        width = len(bits)
+    diff = default_width_for_size(reg['width']) - title_min_width
+    if diff < 0:
+        expands[0] = -diff
+        title_space = 1
+        width = title_min_width
+    else:
+        title_space = width - title_min_width + 1
 
-        header = HEADER.format(
-            line='-'*(width-HEADER_FACTOR)
-        )
-
-        title_space = width-TITLE_FACTOR-len(reg['name'])-len(reg['address'])
-        if title_space < 1:
-            ready = False
-            expandeable_section = {
-                'position': 0,
-                'needed': -title_space+1
-            }
-            continue
-        title = TITLE.format(
+    title = TITLE.format(
             name=reg['name'],
             address=reg['address'],
             space=' '*title_space
-        )
+    )
 
-        divider = DIVIDER.format(
-            line='-'*(width-DIVIDER_FACTOR)
-        )
+    bits = _generate_bits(reg, expands)
 
-        if len(reg['sections']) > 1 or (reg['name'] not in [s['name'] for s in reg['sections']] and len(reg['sections']) == 1) :
-            sections = '| '
-            for section in reg['sections']:
-                section_space = get_bit_factor(section['size']) - len(section['name'])
-                if section_space < 0:
-                    ready = False
-                    expandeable_section = {
-                        'position': section['position'],
-                        'needed': -section_space + 1
-                    }
-                    break
-                sections += section['name'] + ' | '
-            if not ready:
-                continue
+    header = HEADER.format(
+        line='-'*width
+    )
 
 
-        footer = FOOTER.format(
-            line='-'*(width-FOOTER_FACTOR)
-        )
+    divider = DIVIDER.format(
+        line='-'*width
+    )
+
+    footer = FOOTER.format(
+        line='-'*width
+    )
 
     try:
         return '\n'.join([header, title, divider, sections, divider, bits, footer]) + '\n'
@@ -102,10 +84,11 @@ def generate_register_art(reg):
         return '\n'.join([header, title, divider, bits, footer]) + '\n'
 
 
-def _generate_bits(bits, expandeable_section, reg):
+def _generate_bits(reg, expands):
+    bits = ''
     for i in reversed(range(reg['width'])):
-        if expandeable_section and i == expandeable_section['position']:
-            bits += '| {} {}'.format(i, ' ' * expandeable_section['needed'])
+        if i in expands:
+            bits += '| {} {}'.format(i, ' ' * expands[i])
         else:
             bits += '| {} '.format(i)
     else:
@@ -122,15 +105,14 @@ def error_handling(reg):
         reg['width'] = int(reg['width'])
     except ValueError:
         raise ValueError('Value for key "address" has to be an integer.')
-    if 'address' not in reg:
-        raise KeyError('Missing mandatory key: "address"')
-    if not reg['address'].startswith('0x'):
-        try:
-            reg['address'] = hex(int(reg['address']))
-        except ValueError:
-            raise ValueError('Value for key "address" has to be an integer.')
-    else:
-        try:
-            reg['address'] = hex(int(reg['address'], 16))
-        except ValueError:
-            raise ValueError('Value for key "address" has to be an integer.')
+    if 'address' in reg:
+        if not reg['address'].startswith('0x'):
+            try:
+                reg['address'] = hex(int(reg['address']))
+            except ValueError:
+                raise ValueError('Value for key "address" has to be an integer.')
+        else:
+            try:
+                reg['address'] = hex(int(reg['address'], 16))
+            except ValueError:
+                raise ValueError('Value for key "address" has to be an integer.')

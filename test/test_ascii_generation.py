@@ -205,11 +205,11 @@ class WidthErrorCases(TestCase):
 
     def test__width_not_integer__raises_valueerror(self):
         reg = {
-            'name': 'REGA',
+            'name': 'rega',
             'address': '0x123',
             'width': 'asdf',
             'sections': {
-                'REGA': {
+                'rega': {
                     'position': 0,
                     'size': 8
                 }
@@ -220,7 +220,7 @@ class WidthErrorCases(TestCase):
 
 
 class AddressErrorCases(TestCase):
-    def test__no_address__raises_key_error(self):
+    def test__no_address__its_okay__address_is_optional(self):
         reg = {
             'name': 'REGA',
             'width': 8,
@@ -231,91 +231,98 @@ class AddressErrorCases(TestCase):
                 }
             }
         }
-        with self.assertRaises(KeyError):
-            generate_register_art(reg)
-
-    def test__address_no_0x_prefix__gets_extended(self):
-        reg = {
-            'width': 8,
-            'name': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-            'address': '4',
-            'sections': {
-                'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA': {
-                    'position': 0,
-                    'size': 8
-                }
-            }
-        }
         expected = '''\
-/*-----------------------------------#
-| AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0x4 |
-#------------------------------------#
-| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0      |
-#-----------------------------------*/
+/*------------------------------#
+| REGA                          |
+#-------------------------------#
+| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+#------------------------------*/
 '''
         result = generate_register_art(reg)
         self.assertEquals(expected, result)
 
-    def test__address_no_0x_prefix_and_not_integer__valueerror_raised(self):
-        reg = {
-            'width': 8,
-            'name': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-            'address': 'lkj',
-            'sections': {
-                'REGA': {
-                    'position': 0,
-                    'size': 8
-                }
-            }
-        }
-        with self.assertRaises(ValueError):
-            generate_register_art(reg)
-
-    def test__address_integer_gets_converted_to_hexa(self):
-        reg = {
-            'width': 8,
-            'name': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-            'address': '15',
-            'sections': {
-                'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA': {
-                    'position': 0,
-                    'size': 8
-                }
-            }
-        }
-        expected = '''\
-/*-----------------------------------#
-| AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0xf |
-#------------------------------------#
-| 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0      |
-#-----------------------------------*/
-'''
-        result = generate_register_art(reg)
-        self.assertEquals(expected, result)
-
-
-# class OnlySectionsTitleIsDifferentFromTheRegisterName(TestCase):
-#     def test__full_width_section_can_be_rendered(self):
-#         reg = {
-#             'width': 8,
-#             'name': 'REGA',
-#             'address': '0x123',
-#             'sections': {
-#                 'SECTIONaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa': {
-#                     'position': 0,
-#                     'size': 8
-#                 }
-#             }
-#         }
-#         expected = '''\
-# /*------------------------------#
-# | REGA                    0x123 |
-# #-------------------------------#
-# | SECTION                       |
-# #-------------------------------#
-# | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
-# #------------------------------*/
+    # def test__address_no_0x_prefix__gets_extended(self):
+    #     reg = {
+    #         'width': 8,
+    #         'name': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+    #         'address': '4',
+    #         'sections': {
+    #             'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA': {
+    #                 'position': 0,
+    #                 'size': 8
+    #             }
+    #         }
+    #     }
+    #     expected = '''\
+# /*-----------------------------------#
+# | AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0x4 |
+# #------------------------------------#
+# | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0      |
+# #-----------------------------------*/
 # '''
-#         result = generate_register_art(reg)
-#         print(result)
-#         self.assertEquals(expected, result)
+    #     result = generate_register_art(reg)
+    #     self.assertEquals(expected, result)
+
+    # def test__address_no_0x_prefix_and_not_integer__valueerror_raised(self):
+    #     reg = {
+    #         'width': 8,
+    #         'name': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+    #         'address': 'lkj',
+    #         'sections': {
+    #             'REGA': {
+    #                 'position': 0,
+    #                 'size': 8
+    #             }
+    #         }
+    #     }
+    #     with self.assertRaises(ValueError):
+    #         generate_register_art(reg)
+
+    # def test__address_integer_gets_converted_to_hexa(self):
+    #     reg = {
+    #         'width': 8,
+    #         'name': 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+    #         'address': '15',
+    #         'sections': {
+    #             'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA': {
+    #                 'position': 0,
+    #                 'size': 8
+    #             }
+    #         }
+    #     }
+    #     expected = '''\
+# /*-----------------------------------#
+# | AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0xf |
+# #------------------------------------#
+# | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0      |
+# #-----------------------------------*/
+# '''
+    #     result = generate_register_art(reg)
+    #     self.assertEquals(expected, result)
+
+
+# # class OnlySectionsTitleIsDifferentFromTheRegisterName(TestCase):
+# #     def test__full_width_section_can_be_rendered(self):
+# #         reg = {
+# #             'width': 8,
+# #             'name': 'REGA',
+# #             'address': '0x123',
+# #             'sections': {
+# #                 'SECTIONaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa': {
+# #                     'position': 0,
+# #                     'size': 8
+# #                 }
+# #             }
+# #         }
+# #         expected = '''\
+# # /*------------------------------#
+# # | REGA                    0x123 |
+# # #-------------------------------#
+# # | SECTION                       |
+# # #-------------------------------#
+# # | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0 |
+# # #------------------------------*/
+# # '''
+# #         result = generate_register_art(reg)
+# #         print(result)
+# #         self.assertEquals(expected, result)
