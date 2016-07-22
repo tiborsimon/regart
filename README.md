@@ -31,6 +31,7 @@ The responsive register drawing command line tool.
    -v --version   Prints out the version number.
 ```
 
+## Basic usage
 All previously described options are optional. If you did not specify any parameter, an empty register will be printed out:
 
 ```
@@ -56,6 +57,8 @@ $ regart --name REGA --address 0x120 --width 16
 These were the long named options. You can also use the short versions to save typing: `$ regart -n REGA -a 0x120 -w 16`. The result will be the same. The address was given as a hexadecimal number, but you are free to use decimal numbers as well.
 
 For the register width the only limitation is your screen width :D
+
+## Sections
 
 Let's define some register sections!
 ```
@@ -92,7 +95,11 @@ $ regart -n REGA -a 0x123 -s STATUS@7:5 -s CARRY@4 -s ENABLE@3 -s SUM@2:0
 #---------------------------------------*/
 ```
 
-Sections are responsive, as they take up as much space as the needs to keep themselves aligned with their bits. You can use regart as a python module as well. The following example code will demonstrate the usage. It will prodice the same output as the previous command:
+Sections are responsive, as they take up as much space as the needs to keep themselves aligned with their bits. 
+
+## Regart as a python module
+
+You can use regart as a python module as well. The following example code will demonstrate the usage. It will prodice the same output as the previous command:
 ```
 import regart
 reg = {
@@ -123,6 +130,8 @@ print(result)
 ```
 
 As you can see, this is basically the same register description. The only difference is the way you define the sections. Instead of the from-to approach you define the lowest bit number and the section size. Every key in the reg dictionay is optional too. You can pass an empty dictionary as well, and the default register art will be produced.
+
+## License
 
 ```
 The MIT License (MIT)
