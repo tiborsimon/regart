@@ -2,7 +2,10 @@ import sys
 import re
 import pydoc
 from termcolor import colored
+from pkg_resources import get_distribution
 from regart import generate
+
+__version__ = get_distribution('regart').version
 
 HELP = '''\
 ===============================================================================
@@ -22,6 +25,7 @@ HELP = '''\
     regart (-w|--width) <width>
     regart (-s|-section) <section_string> ...
     regart (-h|--help)
+    regart (-v|--version)
 
  Options:
     -n --name      Name of the register. Default: REG.
@@ -29,6 +33,7 @@ HELP = '''\
     -w --width     Register width. Default is 8.
     -s --section   Section definition string. Syntax: "name@from:to"
     -h --help      Prints out this help.
+    -v --version   Prints out the version number.
 
 
 
@@ -196,6 +201,9 @@ try:
                 current_key = 'section'
             if p in ['-h', '--help']:
                pydoc.pager(HELP)
+               sys.exit(0)
+            if p in ['-v', '--version']:
+               print('v{}'.format(__version__))
                sys.exit(0)
 
         else:
