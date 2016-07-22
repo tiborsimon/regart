@@ -122,6 +122,7 @@ def _remove_redefined_positions(reg):
 def _transform_sections(reg, forgiveness=False):
     if 'sections' in reg:
         _convert_dict_to_list(reg)
+        reg['sections'].sort(key=lambda s: s['name'])
         reg['sections'].sort(key=lambda s: s['size'])
         reg['sections'].sort(key=lambda s: s['position'], reverse=True)
         if forgiveness:
