@@ -31,6 +31,14 @@ The responsive register drawing command line tool.
    -v --version   Prints out the version number.
 ```
 
+## How to install
+
+You can install __regart__ via pip:
+
+```
+[sudo] pip install regart
+```
+
 ## Basic usage
 All previously described options are optional. If you did not specify any parameter, an empty register will be printed out:
 
