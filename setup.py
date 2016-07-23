@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='regart',
-    version='1.0.3',
+    version='1.0.4',
     description='Register art generator for ASCII based visual register section descriptions.',
     long_description=("."),
     author='Tibor Simon',
