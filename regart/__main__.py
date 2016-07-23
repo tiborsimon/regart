@@ -26,6 +26,7 @@ HELP = '''\
     regart (-s|-section) <section_string> ...
     regart (-h|--help)
     regart (-v|--version)
+    regart (-f|--forgive)
 
  Options:
     -n --name      Name of the register. Default: REG.
@@ -34,6 +35,7 @@ HELP = '''\
     -s --section   Section definition string. Syntax: "name@from:to"
     -h --help      Prints out this help.
     -v --version   Prints out the version number.
+    -f --forgive   Allows position redefinition. Firs section will be kept.
 
 
 
@@ -188,6 +190,7 @@ HELP = '''\
 
 reg = {}
 current_key = None
+forgiveness = False
 try:
     for p in sys.argv[1:]:
         if not current_key:
@@ -200,12 +203,13 @@ try:
             if p in ['-s', '--section']:
                 current_key = 'section'
             if p in ['-h', '--help']:
-               pydoc.pager(HELP)
-               sys.exit(0)
+                pydoc.pager(HELP)
+                sys.exit(0)
             if p in ['-v', '--version']:
-               print('v{}'.format(__version__))
-               sys.exit(0)
-
+                print('v{}'.format(__version__))
+                sys.exit(0)
+            if p in ['-f', '--forgive']:
+                forgiveness = True
         else:
             if current_key == 'section':
                 if 'sections' not in reg:
@@ -231,7 +235,7 @@ try:
             else:
                 reg[current_key] = p
             current_key = None
-    print(generate(reg))
+    print(generate(reg, forgiveness))
 except Exception as e:
     print(colored(e.args[0], 'red'))
     sys.exit(1)

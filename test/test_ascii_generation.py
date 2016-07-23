@@ -803,6 +803,28 @@ class SectionErrorHandling(TestCase):
         with self.assertRaises(ValueError):
             generate(reg)
 
+    def test__position_defined_twice_with_forgiveness(self):
+        reg = {
+            'width': 4,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'B': {
+                    'position': 0,
+                    'size': 2
+                },
+                'A': {
+                    'position': 0,
+                    'size': 2
+                },
+                'C': {
+                    'position': 2,
+                    'size': 2
+                }
+            }
+        }
+        generate(reg, forgiveness=True)
+
     def test__section_intersection(self):
         reg = {
             'width': 4,
@@ -860,5 +882,72 @@ class SectionErrorHandling(TestCase):
         }
         with self.assertRaises(ValueError):
             generate(reg)
+
+class ForgivenessCases(TestCase):
+    def test__not_fully_defined_register__empty_sections_can_be_printed(self):
+        reg = {
+            'width': 4,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'A': {
+                    'position': '0',
+                    'size': '1'
+                },
+                'B': {
+                    'position': '1',
+                    'size': '1'
+                },
+                'D': {
+                    'position': '3',
+                    'size': '1'
+                }
+            }
+        }
+        expected = '''\
+/*--------------#
+| REGA    0x123 |
+#---------------#
+| D | - | B | A |
+#---------------#
+| 3 | 2 | 1 | 0 |
+#--------------*/
+'''
+        result = generate(reg, forgiveness=True)
+        print(result)
+        self.assertEquals(expected, result)
+
+    def test__not_fully_defined_register__empty_sections_can_be_printed_2(self):
+        reg = {
+            'width': 4,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'A': {
+                    'position': '0',
+                    'size': '1'
+                },
+                'B': {
+                    'position': '1',
+                    'size': '1'
+                },
+                'D': {
+                    'position': '2',
+                    'size': '1'
+                }
+            }
+        }
+        expected = '''\
+/*--------------#
+| REGA    0x123 |
+#---------------#
+| - | D | B | A |
+#---------------#
+| 3 | 2 | 1 | 0 |
+#--------------*/
+'''
+        result = generate(reg, forgiveness=True)
+        print(result)
+        self.assertEquals(expected, result)
 
 

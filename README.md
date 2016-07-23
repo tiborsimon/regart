@@ -19,6 +19,7 @@ The responsive register drawing command line tool.
    regart (-s|-section) <section_string> ...
    regart (-h|--help)
    regart (-v|--version)
+   regart (-f|--forgive)
 ```
 
 ## Options
@@ -29,6 +30,7 @@ The responsive register drawing command line tool.
    -s --section   Section definition string. Syntax: "name@from:to"
    -h --help      Prints out this help.
    -v --version   Prints out the version number.
+   -f --forgive   Allows position redefinition. Firs section will be kept.
 ```
 
 ## How to install

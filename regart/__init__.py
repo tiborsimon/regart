@@ -1,6 +1,6 @@
-def generate(reg):
-    _transform_sections(reg)
-    _error_handling(reg)
+def generate(reg, forgiveness=False):
+    _transform_sections(reg, forgiveness)
+    _error_handling(reg, forgiveness)
 
     expands = {}
 
@@ -68,7 +68,7 @@ def generate(reg):
         return '\n'.join([header, title, divider, bits, footer]) + '\n'
 
 
-def _transform_sections(reg):
+def _transform_sections(reg, forgiveness=False):
     if 'sections' in reg:
         temp = []
         for section_name in reg['sections']:
@@ -76,13 +76,31 @@ def _transform_sections(reg):
             try:
                 temp.append({
                     'name': section_name,
-                    'position': section['position'],
-                    'size': section['size']
+                    'position': normalize_to_int(section['position'], 'position'),
+                    'size': normalize_to_int(section['size'], 'size')
                 })
             except ValueError:
                 raise ValueError('Invalid section parameters.')
-        temp.sort(key=lambda s: s['position'], reverse=True)
         reg['sections'] = temp
+        if forgiveness:
+            if 'width' in reg:
+                width = normalize_to_int(reg['width'], 'width')
+                position_list = list(range(width))
+            else:
+                position_list = list(range(8))
+            for s in reg['sections']:
+                position = s['position']
+                size = s['size']
+                positions = list(range(position, position + size))
+                for p in positions:
+                    position_list = [pos for pos in position_list if pos != p]
+            for pos in position_list:
+                reg['sections'].append({
+                    'name': '-',
+                    'position': pos,
+                    'size': 1
+                })
+        reg['sections'].sort(key=lambda s: s['position'], reverse=True)
 
 
 def _default_width_for_size(size):
@@ -106,13 +124,13 @@ def _generate_bits(reg, expands):
     return bits
 
 
-def _error_handling(reg):
+def _error_handling(reg, forgiveness):
     _validate_name(reg)
     _validate_width(reg)
     _validate_address(reg)
     _validate_sections(reg)
-    _validate_section_size(reg)
-    _validate_section_position(reg)
+    _validate_section_position(reg, forgiveness)
+    _validate_section_size(reg, forgiveness)
 
 
 def _validate_sections(reg):
@@ -181,18 +199,20 @@ def normalize_to_int(value, name):
     return value
 
 
-def _validate_section_size(reg):
-    size_sum = 0
-    for s in reg['sections']:
-        size_sum += s['size']
-    if size_sum < reg['width']:
-        raise ValueError('Sections do not fill the register width.')
-    elif size_sum > reg['width']:
-        raise ValueError('Sections size exceed the register width.')
+def _validate_section_size(reg, forgiveness):
+    if not forgiveness:
+        size_sum = 0
+        for s in reg['sections']:
+            size_sum += s['size']
+        if size_sum < reg['width']:
+            raise ValueError('Sections do not fill the register width.')
+        elif size_sum > reg['width']:
+            raise ValueError('Sections size exceed the register width.')
 
 
-def _validate_section_position(reg):
+def _validate_section_position(reg, forgiveness):
     position_map = []
+    deletable_indexes = []
     for s in reg['sections']:
         pos = s['position']
         if s['size'] > 1:
@@ -201,5 +221,15 @@ def _validate_section_position(reg):
             positions = [pos]
         for pos in positions:
             if pos in position_map:
-                raise ValueError('Section position redefined.')
+                if forgiveness:
+                    index = reg['sections'].index(s)
+                    if index not in deletable_indexes:
+                        deletable_indexes.append(index)
+                else:
+                    raise ValueError('Section position redefined.')
         position_map.extend(positions)
+    pop_offset = 0
+    for index in deletable_indexes:
+        reg['sections'].pop(index-pop_offset)
+        pop_offset += 1
+
