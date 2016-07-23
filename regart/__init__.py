@@ -76,8 +76,8 @@ def _transform_sections(reg):
             try:
                 temp.append({
                     'name': section_name,
-                    'position': int(section['position']),
-                    'size': int(section['size'])
+                    'position': section['position'],
+                    'size': section['size']
                 })
             except ValueError:
                 raise ValueError('Invalid section parameters.')
@@ -122,6 +122,10 @@ def _validate_sections(reg):
             'position': 0,
             'size': reg['width']
         }]
+    else:
+        for section in reg['sections']:
+            section['position'] = normalize_to_int(section['position'], 'position')
+            section['size'] = normalize_to_int(section['size'], 'size')
 
 
 def _validate_name(reg):
@@ -140,19 +144,41 @@ def _validate_width(reg):
 
 def _validate_address(reg):
     if 'address' in reg:
-        try:
-            if not reg['address'].startswith('0x'):
-                try:
-                    reg['address'] = hex(int(reg['address']))
-                except ValueError:
-                    raise ValueError('Value for key "address" has to be an integer.')
-            else:
-                try:
-                    reg['address'] = hex(int(reg['address'], 16))
-                except ValueError:
-                    raise ValueError('Value for key "address" has to be an integer.')
-        except:
-            reg['address'] = hex(int(reg['address']))
+        reg['address'] = normalize_to_hex(reg['address'], 'address')
+
+
+def normalize_to_hex(value, name):
+    try:
+        if not value.startswith('0x'):
+            try:
+                value = hex(int(value))
+            except ValueError:
+                raise ValueError('Value for key "{}" has to be an integer.'.format(name))
+        else:
+            try:
+                value = hex(int(value, 16))
+            except ValueError:
+                raise ValueError('Value for key "{}" has to be an integer.'.format(name))
+    except:
+        value = hex(int(value))
+    return value
+
+
+def normalize_to_int(value, name):
+    try:
+        if not value.startswith('0x'):
+            try:
+                value = int(value)
+            except ValueError:
+                raise ValueError('Value for key "{}" has to be an integer.'.format(name))
+        else:
+            try:
+                value = int(value, 16)
+            except ValueError:
+                raise ValueError('Value for key "{}" has to be an integer.'.format(name))
+    except:
+        value = int(value)
+    return value
 
 
 def _validate_section_size(reg):
