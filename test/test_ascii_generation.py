@@ -6,7 +6,6 @@ from regart import _default_width_for_size
 
 
 class GetWidthForSize(TestCase):
-
     def test__basic_11_bit_length(self):
         temp = '10 | 9 | 8 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0'
         size = 11
@@ -149,6 +148,7 @@ class OnlySectionsTitleIsTheRegisterName(TestCase):
 '''
         result = generate(reg)
         self.assertEquals(expected, result)
+
 
 class MinimalConfig(TestCase):
     def test__no_name__set_default_to_REG(self):
@@ -883,6 +883,7 @@ class SectionErrorHandling(TestCase):
         with self.assertRaises(ValueError):
             generate(reg)
 
+
 class ForgivenessCases(TestCase):
     def test__not_fully_defined_register__empty_sections_can_be_printed(self):
         reg = {
@@ -914,7 +915,6 @@ class ForgivenessCases(TestCase):
 #--------------*/
 '''
         result = generate(reg, forgiveness=True)
-        print(result)
         self.assertEquals(expected, result)
 
     def test__not_fully_defined_register__empty_sections_can_be_printed_2(self):
@@ -947,7 +947,138 @@ class ForgivenessCases(TestCase):
 #--------------*/
 '''
         result = generate(reg, forgiveness=True)
-        print(result)
         self.assertEquals(expected, result)
 
+    def test__not_fully_defined_register__empty_sections_can_be_printed_3(self):
+        reg = {
+            'width': 4,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'A': {
+                    'position': '1',
+                    'size': '1'
+                },
+                'B': {
+                    'position': '2',
+                    'size': '1'
+                },
+                'D': {
+                    'position': '3',
+                    'size': '1'
+                }
+            }
+        }
+        expected = '''\
+/*--------------#
+| REGA    0x123 |
+#---------------#
+| D | B | A | - |
+#---------------#
+| 3 | 2 | 1 | 0 |
+#--------------*/
+'''
+        result = generate(reg, forgiveness=True)
+        self.assertEquals(expected, result)
 
+    def test__not_fully_defined_register__empty_sections_can_be_printed_4(self):
+        reg = {
+            'address': '0xF6D',
+            'name': 'CM1CON0',
+            'sections': {
+                'C1CH': {
+                    'position': '0x0',
+                    'size': '0x2',
+                },
+                'C1CH0': {
+                    'clear-mask': '0xFE',
+                    'position': '0x0',
+                    'size': '0x1',
+                    'value-mask': '0x1'
+                },
+                'C1CH1': {
+                    'clear-mask': '0xFD',
+                    'position': '0x1',
+                    'size': '0x1',
+                    'value-mask': '0x2'
+                },
+                'C1OE': {
+                    'clear-mask': '0xDF',
+                    'position': '0x5',
+                    'size': '0x1',
+                    'value-mask': '0x20'
+                },
+                'C1ON': {
+                    'clear-mask': '0x7F',
+                    'position': '0x7',
+                    'size': '0x1',
+                    'value-mask': '0x80'},
+                'C1OUT': {
+                    'clear-mask': '0xBF',
+                    'position': '0x6',
+                    'size': '0x1',
+                    'value-mask': '0x40'
+                },
+                'C1POL': {
+                    'clear-mask': '0xEF',
+                    'position': '0x4',
+                    'size': '0x1',
+                    'value-mask': '0x10'
+                },
+                'C1R': {
+                    'clear-mask': '0xFB',
+                    'position': '0x2',
+                    'size': '0x1',
+                    'value-mask': '0x4'
+                },
+                'C1SP': {
+                    'clear-mask': '0xF7',
+                    'position': '0x3',
+                    'size': '0x1',
+                    'value-mask': '0x8'
+                }
+            }
+        }
+        expected = '''\
+/*---------------------------------------------------------#
+| CM1CON0                                            0xf6d |
+#----------------------------------------------------------#
+| C1ON | C1OUT | C1OE | C1POL | C1SP | C1R | C1CH1 | C1CH0 |
+#----------------------------------------------------------#
+| 7    | 6     | 5    | 4     | 3    | 2   | 1     | 0     |
+#---------------------------------------------------------*/
+'''
+        result = generate(reg, forgiveness=True)
+        self.assertEquals(expected, result)
+
+    def test__position_redefined_multiple_times__longest_will_kept(self):
+        reg = {
+            'width': 4,
+            'name': 'REGA',
+            'address': '0x123',
+            'sections': {
+                'AAA': {
+                    'position': '0',
+                    'size': '1'
+                },
+                'AA': {
+                    'position': '0',
+                    'size': '1'
+                },
+                'A': {
+                    'position': '0',
+                    'size': '1'
+                }
+            }
+        }
+        expected = '''\
+/*----------------#
+| REGA      0x123 |
+#-----------------#
+| - | - | - | AAA |
+#-----------------#
+| 3 | 2 | 1 | 0   |
+#----------------*/
+'''
+        result = generate(reg, forgiveness=True)
+        self.assertEquals(expected, result)

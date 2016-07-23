@@ -1,6 +1,9 @@
+
 def generate(reg, forgiveness=False):
+    _normalize_fields(reg)
     _transform_sections(reg, forgiveness)
-    _error_handling(reg, forgiveness)
+    _validate_section_position(reg, forgiveness)
+    _validate_section_size(reg, forgiveness)
 
     expands = {}
 
@@ -68,6 +71,29 @@ def generate(reg, forgiveness=False):
         return '\n'.join([header, title, divider, bits, footer]) + '\n'
 
 
+def _normalize_fields(reg):
+    if 'name' not in reg:
+        reg['name'] = 'REG'
+    if 'address' in reg:
+        reg['address'] = normalize_to_hex(reg['address'], 'address')
+    if 'width' not in reg:
+        reg['width'] = 8
+    else:
+        reg['width'] = normalize_to_int(reg['width'], 'width')
+    if 'sections' not in reg:
+        reg['sections'] = {
+            reg['name']: {
+                'position': 0,
+                'size': reg['width']
+            }
+        }
+    else:
+        for section_name in reg['sections']:
+            section = reg['sections'][section_name]
+            section['position'] = normalize_to_int(section['position'], 'position')
+            section['size'] = normalize_to_int(section['size'], 'size')
+
+
 def _transform_sections(reg, forgiveness=False):
     if 'sections' in reg:
         temp = []
@@ -76,18 +102,21 @@ def _transform_sections(reg, forgiveness=False):
             try:
                 temp.append({
                     'name': section_name,
-                    'position': normalize_to_int(section['position'], 'position'),
-                    'size': normalize_to_int(section['size'], 'size')
+                    'position': section['position'],
+                    'size': section['size']
                 })
             except ValueError:
                 raise ValueError('Invalid section parameters.')
         reg['sections'] = temp
         if forgiveness:
             if 'width' in reg:
-                width = normalize_to_int(reg['width'], 'width')
-                position_list = list(range(width))
+                position_list = {}
+                for pos in range(reg['width']):
+                    position_list[pos] = True
             else:
-                position_list = list(range(8))
+                position_list = {}
+                for pos in range(8):
+                    position_list[pos] = True
             for s in reg['sections']:
                 position = s['position']
                 size = s['size']
@@ -124,45 +153,47 @@ def _generate_bits(reg, expands):
     return bits
 
 
-def _error_handling(reg, forgiveness):
-    _validate_name(reg)
-    _validate_width(reg)
-    _validate_address(reg)
-    _validate_sections(reg)
-    _validate_section_position(reg, forgiveness)
-    _validate_section_size(reg, forgiveness)
+def _validate_section_size(reg, forgiveness):
+    if not forgiveness:
+        size_sum = 0
+        for s in reg['sections']:
+            size_sum += s['size']
+        if size_sum < reg['width']:
+            raise ValueError('Sections do not fill the register width.')
+        elif size_sum > reg['width']:
+            raise ValueError('Sections size exceed the register width.')
 
 
-def _validate_sections(reg):
-    if 'sections' not in reg:
-        reg['sections'] = [{
-            'name': reg['name'],
-            'position': 0,
-            'size': reg['width']
-        }]
-    else:
-        for section in reg['sections']:
-            section['position'] = normalize_to_int(section['position'], 'position')
-            section['size'] = normalize_to_int(section['size'], 'size')
+def _validate_section_position(reg, forgiveness):
+    position_map = []
+    deletable_positions = []
+    for s in reg['sections']:
+        pos = s['position']
+        if s['size'] > 1:
+            positions = list(range(pos, pos + s['size']))
+        else:
+            positions = [pos]
+        for pos in positions:
+            if pos in position_map:
+                if forgiveness:
+                    if s['position'] not in deletable_positions:
+                        deletable_positions.append(s['position'])
+                else:
+                    raise ValueError('Section position redefined.')
+        position_map.extend(positions)
+    for pos in deletable_positions:
+        targets = [s for s in reg['sections'] if s['position'] == pos]
+        if len(targets) == 1:
+            index = reg['sections'].index(targets[0])
+            reg['sections'].pop(index)
+        else:
+            targets.sort(key=lambda t: len(t['name']))
+            for i in range(len(targets)-1):
+                index = reg['sections'].index(targets[0])
+                reg['sections'].pop(index)
+                targets = targets[1:]
 
 
-def _validate_name(reg):
-    if 'name' not in reg:
-        reg['name'] = 'REG'
-
-
-def _validate_width(reg):
-    if 'width' not in reg:
-        reg['width'] = 8
-    try:
-        reg['width'] = int(reg['width'])
-    except ValueError:
-        raise ValueError('Value for key "address" has to be an integer.')
-
-
-def _validate_address(reg):
-    if 'address' in reg:
-        reg['address'] = normalize_to_hex(reg['address'], 'address')
 
 
 def normalize_to_hex(value, name):
@@ -198,38 +229,4 @@ def normalize_to_int(value, name):
         value = int(value)
     return value
 
-
-def _validate_section_size(reg, forgiveness):
-    if not forgiveness:
-        size_sum = 0
-        for s in reg['sections']:
-            size_sum += s['size']
-        if size_sum < reg['width']:
-            raise ValueError('Sections do not fill the register width.')
-        elif size_sum > reg['width']:
-            raise ValueError('Sections size exceed the register width.')
-
-
-def _validate_section_position(reg, forgiveness):
-    position_map = []
-    deletable_indexes = []
-    for s in reg['sections']:
-        pos = s['position']
-        if s['size'] > 1:
-            positions = list(range(pos, pos + s['size']))
-        else:
-            positions = [pos]
-        for pos in positions:
-            if pos in position_map:
-                if forgiveness:
-                    index = reg['sections'].index(s)
-                    if index not in deletable_indexes:
-                        deletable_indexes.append(index)
-                else:
-                    raise ValueError('Section position redefined.')
-        position_map.extend(positions)
-    pop_offset = 0
-    for index in deletable_indexes:
-        reg['sections'].pop(index-pop_offset)
-        pop_offset += 1
 
