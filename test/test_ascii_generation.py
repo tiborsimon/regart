@@ -314,7 +314,7 @@ class AddressErrorCases(TestCase):
         }
         expected = '''\
 /*-----------------------------------#
-| AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0xf |
+| AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0xF |
 #------------------------------------#
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0      |
 #-----------------------------------*/
@@ -336,7 +336,7 @@ class AddressErrorCases(TestCase):
         }
         expected = '''\
 /*-----------------------------------#
-| AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0xf |
+| AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA 0xF |
 #------------------------------------#
 | 7 | 6 | 5 | 4 | 3 | 2 | 1 | 0      |
 #-----------------------------------*/
@@ -988,60 +988,45 @@ class ForgivenessCases(TestCase):
             'sections': {
                 'C1CH': {
                     'position': '0x0',
-                    'size': '0x2',
+                    'size': '0x2'
                 },
                 'C1CH0': {
-                    'clear-mask': '0xFE',
                     'position': '0x0',
-                    'size': '0x1',
-                    'value-mask': '0x1'
+                    'size': '0x1'
                 },
                 'C1CH1': {
-                    'clear-mask': '0xFD',
                     'position': '0x1',
-                    'size': '0x1',
-                    'value-mask': '0x2'
+                    'size': '0x1'
                 },
                 'C1OE': {
-                    'clear-mask': '0xDF',
                     'position': '0x5',
-                    'size': '0x1',
-                    'value-mask': '0x20'
+                    'size': '0x1'
                 },
                 'C1ON': {
-                    'clear-mask': '0x7F',
                     'position': '0x7',
-                    'size': '0x1',
-                    'value-mask': '0x80'},
+                    'size': '0x1'
+                },
                 'C1OUT': {
-                    'clear-mask': '0xBF',
                     'position': '0x6',
-                    'size': '0x1',
-                    'value-mask': '0x40'
+                    'size': '0x1'
                 },
                 'C1POL': {
-                    'clear-mask': '0xEF',
                     'position': '0x4',
-                    'size': '0x1',
-                    'value-mask': '0x10'
+                    'size': '0x1'
                 },
                 'C1R': {
-                    'clear-mask': '0xFB',
                     'position': '0x2',
-                    'size': '0x1',
-                    'value-mask': '0x4'
+                    'size': '0x1'
                 },
                 'C1SP': {
-                    'clear-mask': '0xF7',
                     'position': '0x3',
-                    'size': '0x1',
-                    'value-mask': '0x8'
+                    'size': '0x1'
                 }
             }
         }
         expected = '''\
 /*---------------------------------------------------------#
-| CM1CON0                                            0xf6d |
+| CM1CON0                                            0xF6D |
 #----------------------------------------------------------#
 | C1ON | C1OUT | C1OE | C1POL | C1SP | C1R | C1CH1 | C1CH0 |
 #----------------------------------------------------------#
@@ -1051,7 +1036,7 @@ class ForgivenessCases(TestCase):
         result = generate(reg, forgiveness=True)
         self.assertEquals(expected, result)
 
-    def test__position_redefined_multiple_times__longest_will_kept(self):
+    def test__position_redefined_multiple_times__shortest_size_will_kept(self):
         reg = {
             'width': 4,
             'name': 'REGA',
@@ -1059,11 +1044,11 @@ class ForgivenessCases(TestCase):
             'sections': {
                 'AAA': {
                     'position': '0',
-                    'size': '1'
+                    'size': '3'
                 },
                 'AA': {
                     'position': '0',
-                    'size': '1'
+                    'size': '2'
                 },
                 'A': {
                     'position': '0',
@@ -1072,13 +1057,70 @@ class ForgivenessCases(TestCase):
             }
         }
         expected = '''\
-/*----------------#
-| REGA      0x123 |
-#-----------------#
-| - | - | - | AAA |
-#-----------------#
-| 3 | 2 | 1 | 0   |
-#----------------*/
+/*--------------#
+| REGA    0x123 |
+#---------------#
+| - | - | - | A |
+#---------------#
+| 3 | 2 | 1 | 0 |
+#--------------*/
 '''
         result = generate(reg, forgiveness=True)
         self.assertEquals(expected, result)
+
+    def test__issue_3(self):
+        reg = {
+            'address': '0xFFC',
+            'name': 'STKPTR',
+            'sections': {
+                'SP0': {
+                    'position': '0x0',
+                    'size': '0x1'
+                },
+                'SP1': {
+                    'position': '0x1',
+                    'size': '0x1'
+                },
+                'SP2': {
+                    'position': '0x2',
+                    'size': '0x1'
+                },
+                'SP3': {
+                    'position': '0x3',
+                    'size': '0x1'
+                },
+                'SP4': {
+                    'position': '0x4',
+                    'size': '0x1'
+                },
+                'STKFUL': {
+                    'position': '0x7',
+                    'size': '0x1'
+                },
+                'STKOVF': {
+                    'position': '0x7',
+                    'size': '0x1'
+                },
+                'STKPTR': {
+                    'position': '0x0',
+                    'size': '0x5'
+                },
+                'STKUNF': {
+                    'position': '0x6',
+                    'size': '0x1'
+                }
+            }
+        }
+        expected = '''\
+/*--------------------------------------------------#
+| STKPTR                                      0xFFC |
+#---------------------------------------------------#
+| STKFUL | STKUNF | - | SP4 | SP3 | SP2 | SP1 | SP0 |
+#---------------------------------------------------#
+| 7      | 6      | 5 | 4   | 3   | 2   | 1   | 0   |
+#--------------------------------------------------*/
+'''
+        result = generate(reg, forgiveness=True)
+        self.assertEquals(expected, result)
+
+

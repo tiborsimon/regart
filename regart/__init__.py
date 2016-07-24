@@ -1,5 +1,6 @@
 
-def generate(reg, forgiveness=False):
+def generate(reg_in, forgiveness=False):
+    reg = dict(reg_in)
     _normalize_fields(reg)
     _transform_sections(reg, forgiveness)
     _validate_section_position(reg, forgiveness)
@@ -76,6 +77,7 @@ def _normalize_fields(reg):
         reg['name'] = 'REG'
     if 'address' in reg:
         reg['address'] = normalize_to_hex(reg['address'], 'address')
+        reg['address'] = '0x' + reg['address'][2:].upper()
     if 'width' not in reg:
         reg['width'] = 8
     else:
@@ -94,42 +96,69 @@ def _normalize_fields(reg):
             section['size'] = normalize_to_int(section['size'], 'size')
 
 
+def _remove_redefined_positions(reg):
+    current_position = reg['sections'][0]['position']
+    position_found = False
+    deletable_names = []
+    for section in reg['sections']:
+        if section['position'] == current_position:
+            if not position_found:
+                position_found = True
+            else:
+                deletable_names.append(section['name'])
+        else:
+            current_position = section['position']
+            position_found = False
+            if section['position'] == current_position:
+                position_found = True
+    temp = []
+    for section in reg['sections']:
+        if section['name'] not in deletable_names:
+            temp.append(section)
+
+    reg['sections'] = temp
+
+
 def _transform_sections(reg, forgiveness=False):
     if 'sections' in reg:
-        temp = []
-        for section_name in reg['sections']:
-            section = reg['sections'][section_name]
-            try:
-                temp.append({
-                    'name': section_name,
-                    'position': section['position'],
-                    'size': section['size']
-                })
-            except ValueError:
-                raise ValueError('Invalid section parameters.')
-        reg['sections'] = temp
-        if forgiveness:
-            if 'width' in reg:
-                position_list = {}
-                for pos in range(reg['width']):
-                    position_list[pos] = True
-            else:
-                position_list = {}
-                for pos in range(8):
-                    position_list[pos] = True
-            for s in reg['sections']:
-                position = s['position']
-                size = s['size']
-                positions = list(range(position, position + size))
-                for p in positions:
-                    position_list = [pos for pos in position_list if pos != p]
-            for pos in position_list:
-                reg['sections'].append({
-                    'name': '-',
-                    'position': pos,
-                    'size': 1
-                })
+        _convert_dict_to_list(reg)
+        reg['sections'].sort(key=lambda s: s['size'])
         reg['sections'].sort(key=lambda s: s['position'], reverse=True)
+        if forgiveness:
+            _remove_redefined_positions(reg)
+            _fill_position_holes(reg)
+
+
+def _convert_dict_to_list(reg):
+    temp = []
+    for section_name in reg['sections']:
+        section = reg['sections'][section_name]
+        try:
+            temp.append({
+                'name': section_name,
+                'position': section['position'],
+                'size': section['size']
+            })
+        except ValueError:
+            raise ValueError('Invalid section parameters.')
+    reg['sections'] = temp
+
+
+def _fill_position_holes(reg):
+    position_list = list(range(reg['width']))
+    for s in reg['sections']:
+        position = s['position']
+        size = s['size']
+        positions = list(range(position, position + size))
+        for p in positions:
+            position_list = [pos for pos in position_list if pos != p]
+    for pos in position_list:
+        reg['sections'].append({
+            'name': '-',
+            'position': pos,
+            'size': 1
+        })
+    reg['sections'].sort(key=lambda s: s['position'], reverse=True)
 
 
 def _default_width_for_size(size):
@@ -165,35 +194,18 @@ def _validate_section_size(reg, forgiveness):
 
 
 def _validate_section_position(reg, forgiveness):
-    position_map = []
-    deletable_positions = []
-    for s in reg['sections']:
-        pos = s['position']
-        if s['size'] > 1:
-            positions = list(range(pos, pos + s['size']))
-        else:
-            positions = [pos]
-        for pos in positions:
-            if pos in position_map:
-                if forgiveness:
-                    if s['position'] not in deletable_positions:
-                        deletable_positions.append(s['position'])
-                else:
+    if not forgiveness:
+        position_map = []
+        for s in reg['sections']:
+            pos = s['position']
+            if s['size'] > 1:
+                positions = list(range(pos, pos + s['size']))
+            else:
+                positions = [pos]
+            for pos in positions:
+                if pos in position_map:
                     raise ValueError('Section position redefined.')
-        position_map.extend(positions)
-    for pos in deletable_positions:
-        targets = [s for s in reg['sections'] if s['position'] == pos]
-        if len(targets) == 1:
-            index = reg['sections'].index(targets[0])
-            reg['sections'].pop(index)
-        else:
-            targets.sort(key=lambda t: len(t['name']))
-            for i in range(len(targets)-1):
-                index = reg['sections'].index(targets[0])
-                reg['sections'].pop(index)
-                targets = targets[1:]
-
-
+            position_map.extend(positions)
 
 
 def normalize_to_hex(value, name):
