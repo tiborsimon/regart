@@ -141,6 +141,16 @@ print(result)
 
 As you can see, this is basically the same register description. The only difference is the way you define the sections. Instead of the from-to approach you define the lowest bit number and the section size. Every key in the reg dictionay is optional too. You can pass an empty dictionary as well, and the default register art will be produced.
 
+## Forgiveness mode
+
+There is an optional mode, that allows you to omit or redefine sections. Omitted sections will be replaced a 1 bit section with the name of'-'. Redefined sections will be ignored. The section with the smallest size will be kept in alphabetic order.
+
+You can turn on this mode from the command line with the `-f` switch, or from python code the extra parameter of the generate funciton:
+
+```
+regart.generate(reg, forgiveness=True)
+```
+
 ## License
 
 ```
